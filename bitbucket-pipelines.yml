@@ -13,6 +13,11 @@ pipelines:
         caches:
           - maven
         script:
-          - mvn -B clean package
+          - mvn -B clean package -Dmaven.test.skip=true
         artifacts:
           - target/*.jar
+    - step:
+        name: scp jar to takeandrive public
+        image: ictu/sshpass:latest
+        script:
+          - sshpass -p $TAKEANDDRIVE_SERVER_PUBLIC_PASSWORD ssh -o StrictHostKeyChecking=no $TAKEANDDRIVE_SERVER_PUBLIC_USER@$TAKEANDDRIVE_SERVER_PUBLIC_HOST "ls -la"
