@@ -20,4 +20,4 @@ pipelines:
         name: scp jar to takeandrive public
         image: ictu/sshpass:latest
         script:
-          - sshpass -p $TAKEANDDRIVE_SERVER_PUBLIC_PASSWORD ssh -o StrictHostKeyChecking=no $TAKEANDDRIVE_SERVER_PUBLIC_USER@$TAKEANDDRIVE_SERVER_PUBLIC_HOST "ls -la"
+          - sshpass -p $TAKEANDDRIVE_SERVER_PUBLIC_PASSWORD scp -o StrictHostKeyChecking=no target/otp-1.5.0-SNAPSHOT-shaded.jar $TAKEANDDRIVE_SERVER_PUBLIC_USER@$TAKEANDDRIVE_SERVER_PUBLIC_HOST:/usr/share/nginx/html/artifacts/otp.jar
