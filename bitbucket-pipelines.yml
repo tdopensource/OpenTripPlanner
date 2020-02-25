@@ -1,0 +1,23 @@
+# This is a sample build configuration for Other.
+# Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+
+
+pipelines:
+  default:
+    - step:
+        name: maven build
+        image: maven:3.6.3-jdk-8
+        caches:
+          - maven
+        script:
+          - mvn -B clean package -Dmaven.test.skip=true
+        artifacts:
+          - target/*.jar
+    - step:
+        name: scp jar to takeandrive public
+        image: ictu/sshpass:latest
+        script:
+          - sshpass -p $TAKEANDDRIVE_SERVER_PUBLIC_PASSWORD scp -o StrictHostKeyChecking=no target/otp-1.5.0-SNAPSHOT-shaded.jar $TAKEANDDRIVE_SERVER_PUBLIC_USER@$TAKEANDDRIVE_SERVER_PUBLIC_HOST:/usr/share/nginx/html/artifacts/otp.jar

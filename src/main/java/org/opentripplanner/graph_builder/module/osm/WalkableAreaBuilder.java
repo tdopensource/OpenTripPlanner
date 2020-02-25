@@ -68,7 +68,7 @@ public class WalkableAreaBuilder {
 
     private static Logger LOG = LoggerFactory.getLogger(WalkableAreaBuilder.class);
 
-    private final int MAX_AREA_NODES = 500;
+    private final int MAX_AREA_NODES = 2;
 
     private static final double VISIBILITY_EPSILON = 0.000000001;
 
