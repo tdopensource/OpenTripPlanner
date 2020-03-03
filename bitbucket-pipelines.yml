@@ -13,7 +13,7 @@ pipelines:
         caches:
           - maven
         script:
-          - mvn -B clean package -Dmaven.test.skip=true
+          - mvn -B clean package
         artifacts:
           - target/*.jar
     - step:
