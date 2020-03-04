@@ -181,7 +181,7 @@ public class SimpleStreetSplitter {
         return link(vertex, TraverseMode.WALK, null);
     }
 
-    void sortTwoMinElementsOnly(final List<StreetWithDistanceAdapter> candidateEdges) {
+    void sortThreeMinElementsOnly(final List<StreetWithDistanceAdapter> candidateEdges) {
         if (!candidateEdges.isEmpty()) {
             List<StreetWithDistanceAdapter> minElements = new ArrayList<>(2);
 
@@ -193,6 +193,11 @@ public class SimpleStreetSplitter {
                 StreetWithDistanceAdapter min2 = Collections.min(candidateEdges, STREET_WITH_DISTANCE_ADAPTER_COMPARATOR);
                 candidateEdges.remove(min2);
                 minElements.add(min2);
+            }
+            if (!candidateEdges.isEmpty()) {
+                StreetWithDistanceAdapter min3 = Collections.min(candidateEdges, STREET_WITH_DISTANCE_ADAPTER_COMPARATOR);
+                candidateEdges.remove(min3);
+                minElements.add(min3);
             }
 
             candidateEdges.addAll(0, minElements);
@@ -238,7 +243,7 @@ public class SimpleStreetSplitter {
                 .map(e -> new StreetWithDistanceAdapter(e,  distance(vertex, e, xscale)))
                 .collect(Collectors.toList());
 
-        sortTwoMinElementsOnly(candidateEdges);
+        sortThreeMinElementsOnly(candidateEdges);
 
         // find the closest candidate edges
         if (candidateEdges.isEmpty() || candidateEdges.get(0).distance > radiusDeg) {
