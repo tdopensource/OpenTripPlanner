@@ -10,7 +10,11 @@ import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.common.geometry.SphericalDistanceLibrary;
 import org.opentripplanner.common.model.P2;
 import org.opentripplanner.common.model.T2;
-import org.opentripplanner.graph_builder.annotation.*;
+import org.opentripplanner.graph_builder.annotation.GraphBuilderAnnotation;
+import org.opentripplanner.graph_builder.annotation.Graphwide;
+import org.opentripplanner.graph_builder.annotation.ParkAndRideUnlinked;
+import org.opentripplanner.graph_builder.annotation.StreetCarSpeedZero;
+import org.opentripplanner.graph_builder.annotation.TurnRestrictionBad;
 import org.opentripplanner.graph_builder.module.extra_elevation_data.ElevationPoint;
 import org.opentripplanner.graph_builder.services.DefaultStreetEdgeFactory;
 import org.opentripplanner.graph_builder.services.GraphBuilderModule;
@@ -34,13 +38,29 @@ import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.services.notes.NoteMatcher;
 import org.opentripplanner.routing.util.ElevationUtils;
-import org.opentripplanner.routing.vertextype.*;
+import org.opentripplanner.routing.vertextype.BarrierVertex;
+import org.opentripplanner.routing.vertextype.BikeParkVertex;
+import org.opentripplanner.routing.vertextype.BikeRentalStationVertex;
+import org.opentripplanner.routing.vertextype.ElevatorOffboardVertex;
+import org.opentripplanner.routing.vertextype.ElevatorOnboardVertex;
+import org.opentripplanner.routing.vertextype.ExitVertex;
+import org.opentripplanner.routing.vertextype.OsmVertex;
+import org.opentripplanner.routing.vertextype.ParkAndRideVertex;
+import org.opentripplanner.routing.vertextype.TransitStopStreetVertex;
 import org.opentripplanner.util.I18NString;
 import org.opentripplanner.util.NonLocalizedString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +77,8 @@ public class OpenStreetMapModule implements GraphBuilderModule {
     private HashMap<Vertex, Double> elevationData = new HashMap<Vertex, Double>();
 
     public boolean skipVisibility = false;
+
+    private int visibilityMaxAreaNodes = 5;
 
     public boolean platformEntriesLinking = false;
 
@@ -135,6 +157,13 @@ public class OpenStreetMapModule implements GraphBuilderModule {
     public void setDefaultWayPropertySetSource(WayPropertySetSource source) {
         wayPropertySet = new WayPropertySet();
         source.populateProperties(wayPropertySet);
+    }
+
+    /**
+     * Set property {@link WalkableAreaBuilder}.maxAreaNodes that limits number of tested
+     */
+    public void setVisibilityMaxAreaNodes(final int visibilityMaxAreaNodes) {
+        this.visibilityMaxAreaNodes = visibilityMaxAreaNodes;
     }
 
     /**
@@ -396,7 +425,7 @@ public class OpenStreetMapModule implements GraphBuilderModule {
             }
             List<AreaGroup> areaGroups = groupAreas(osmdb.getWalkableAreas());
             WalkableAreaBuilder walkableAreaBuilder = new WalkableAreaBuilder(graph, osmdb,
-                    wayPropertySet, edgeFactory, this);
+                    wayPropertySet, edgeFactory, this, visibilityMaxAreaNodes);
             if (skipVisibility) {
                 for (AreaGroup group : areaGroups) {
                     walkableAreaBuilder.buildWithoutVisibility(group);
