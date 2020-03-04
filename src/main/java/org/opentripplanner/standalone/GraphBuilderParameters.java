@@ -91,6 +91,11 @@ public class GraphBuilderParameters {
     public final boolean areaVisibility;
 
     /**
+     * Limit visibility calculations on OSM areas, for details see {@link org.opentripplanner.graph_builder.module.osm.WalkableAreaBuilder}.maxAreaNodes
+     */
+    public int visibilityMaxAreaNodes = 5;
+
+    /**
      * Link unconnected entries to public transport platforms.
      */
     public final boolean platformEntriesLinking;
@@ -201,6 +206,7 @@ public class GraphBuilderParameters {
         streets = config.path("streets").asBoolean(true);
         embedRouterConfig = config.path("embedRouterConfig").asBoolean(true);
         areaVisibility = config.path("areaVisibility").asBoolean(false);
+        visibilityMaxAreaNodes = config.path("visibilityMaxAreaNodes").asInt(5);
         platformEntriesLinking = config.path("platformEntriesLinking").asBoolean(false);
         matchBusRoutesToStreets = config.path("matchBusRoutesToStreets").asBoolean(false);
         fetchElevationUS = config.path("fetchElevationUS").asBoolean(false);
