@@ -162,6 +162,7 @@ public class TestOpenStreetMapGraphBuilder extends TestCase {
 
         OpenStreetMapModule loader = new OpenStreetMapModule();
         loader.skipVisibility = skipVisibility;
+        loader.setVisibilityMaxAreaNodes(15);
         loader.setDefaultWayPropertySetSource(new DefaultWayPropertySetSource());
         FileBasedOpenStreetMapProviderImpl provider = new FileBasedOpenStreetMapProviderImpl();
 

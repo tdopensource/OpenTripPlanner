@@ -68,7 +68,7 @@ public class WalkableAreaBuilder {
 
     private static Logger LOG = LoggerFactory.getLogger(WalkableAreaBuilder.class);
 
-    private final int MAX_AREA_NODES = 2;
+    private final int maxAreaNodes;
 
     private static final double VISIBILITY_EPSILON = 0.000000001;
 
@@ -86,12 +86,13 @@ public class WalkableAreaBuilder {
     private HashMap<Coordinate, IntersectionVertex> areaBoundaryVertexForCoordinate = new HashMap<Coordinate, IntersectionVertex>();
 
     public WalkableAreaBuilder(Graph graph, OSMDatabase osmdb, WayPropertySet wayPropertySet,
-            StreetEdgeFactory edgeFactory, Handler handler) {
+            StreetEdgeFactory edgeFactory, Handler handler, int maxAreaNodes) {
         this.graph = graph;
         this.osmdb = osmdb;
         this.wayPropertySet = wayPropertySet;
         this.edgeFactory = edgeFactory;
         this.handler = handler;
+        this.maxAreaNodes = maxAreaNodes;
     }
 
     /**
@@ -219,9 +220,9 @@ public class WalkableAreaBuilder {
             Environment areaEnv = new Environment(polygons);
             // FIXME: temporary hard limit on size of
             // areas to prevent way explosion
-            if (visibilityPoints.size() > MAX_AREA_NODES) {
+            if (visibilityPoints.size() > maxAreaNodes) {
                 LOG.warn("Area " + group.getSomeOSMObject() + " is too complicated ("
-                        + visibilityPoints.size() + " > " + MAX_AREA_NODES);
+                        + visibilityPoints.size() + " > " + maxAreaNodes);
                 continue;
             }
 
