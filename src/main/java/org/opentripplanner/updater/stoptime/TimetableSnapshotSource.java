@@ -95,6 +95,7 @@ public class TimetableSnapshotSource {
     private final TimeZone timeZone;
 
     private final GraphIndex graphIndex;
+    private final String routerId;
 
     private final Agency dummyAgency;
 
@@ -103,6 +104,7 @@ public class TimetableSnapshotSource {
     public TimetableSnapshotSource(final Graph graph) {
         timeZone = graph.getTimeZone();
         graphIndex = graph.index;
+        routerId = graph.routerId;
 
         // Create dummy agency for added trips
         dummyAgency = new Agency();
@@ -140,14 +142,14 @@ public class TimetableSnapshotSource {
         final long now = System.currentTimeMillis();
         if (force || now - lastSnapshotTime > maxSnapshotFrequency) {
             if (force || buffer.isDirty()) {
-                LOG.debug("Committing {}", buffer.toString());
+                LOG.debug("[{}] Committing {}", routerId, buffer.toString());
                 snapshot = buffer.commit(force);
             } else {
-                LOG.debug("Buffer was unchanged, keeping old snapshot.");
+                LOG.debug("[{}] Buffer was unchanged, keeping old snapshot.", routerId);
             }
             lastSnapshotTime = System.currentTimeMillis();
         } else {
-            LOG.debug("Snapshot frequency exceeded. Reusing snapshot {}", snapshot);
+            LOG.debug("[{}] Snapshot frequency exceeded. Reusing snapshot {}", routerId, snapshot);
         }
         return snapshot;
     }
@@ -171,7 +173,7 @@ public class TimetableSnapshotSource {
      */
     public void applyTripUpdates(final Graph graph, final boolean fullDataset, final List<TripUpdate> updates, final String feedId) {
         if (updates == null) {
-            LOG.warn("updates is null");
+            LOG.warn("[{}] updates is null", routerId);
             return;
         }
 
@@ -184,7 +186,7 @@ public class TimetableSnapshotSource {
                 buffer.clear(feedId);
             }
 
-            LOG.debug("message contains {} trip updates", updates.size());
+            LOG.debug("[{}] message contains {} trip updates", routerId, updates.size());
             int uIndex = 0;
             for (TripUpdate tripUpdate : updates) {
                 if (fuzzyTripMatcher != null && tripUpdate.hasTrip()) {
@@ -193,7 +195,7 @@ public class TimetableSnapshotSource {
                 }
 
                 if (!tripUpdate.hasTrip()) {
-                    LOG.warn("Missing TripDescriptor in gtfs-rt trip update: \n{}", tripUpdate);
+                    LOG.warn("[{}] Missing TripDescriptor in gtfs-rt trip update: \n{}", routerId, tripUpdate);
                     continue;
                 }
 
@@ -204,7 +206,7 @@ public class TimetableSnapshotSource {
                     try {
                         serviceDate = ServiceDate.parseString(tripDescriptor.getStartDate());
                     } catch (final ParseException e) {
-                        LOG.warn("Failed to parse start date in gtfs-rt trip update: \n{}", tripUpdate);
+                        LOG.warn("[{}] Failed to parse start date in gtfs-rt trip update: \n{}", routerId, tripUpdate);
                         continue;
                     }
                 } else {
@@ -213,7 +215,7 @@ public class TimetableSnapshotSource {
                 }
 
                 uIndex += 1;
-                LOG.debug("trip update #{} ({} updates) :",
+                LOG.debug("[{}] trip update #{} ({} updates) :", routerId,
                         uIndex, tripUpdate.getStopTimeUpdateCount());
                 LOG.trace("{}", tripUpdate);
 
@@ -242,15 +244,15 @@ public class TimetableSnapshotSource {
                 if (applied) {
                     appliedBlockCount++;
                 } else {
-                    LOG.warn("Failed to apply TripUpdate.");
+                    LOG.warn("[{}] Failed to apply TripUpdate.", routerId);
                     LOG.trace(" Contents: {}", tripUpdate);
                 }
 
                 if (appliedBlockCount % logFrequency == 0) {
-                    LOG.info("Applied {} trip updates.", appliedBlockCount);
+                    LOG.info("[{}] Applied {} trip updates.", routerId, appliedBlockCount);
                 }
             }
-            LOG.debug("end of update message");
+            LOG.debug("[{}] end of update message", routerId);
 
             // Make a snapshot after each message in anticipation of incoming requests
             // Purge data if necessary (and force new snapshot if anything was purged)
@@ -315,12 +317,12 @@ public class TimetableSnapshotSource {
         final TripPattern pattern = getPatternForTripId(feedId, tripId);
 
         if (pattern == null) {
-            LOG.warn("No pattern found for tripId {}, skipping TripUpdate.", tripId);
+            LOG.warn("[{}] No pattern found for tripId {}, skipping TripUpdate.", routerId, tripId);
             return false;
         }
 
         if (tripUpdate.getStopTimeUpdateCount() < 1) {
-            LOG.warn("TripUpdate contains no updates, skipping.");
+            LOG.warn("[{}] TripUpdate contains no updates, skipping.", routerId);
             return false;
         }
 
@@ -362,7 +364,7 @@ public class TimetableSnapshotSource {
         // Check whether trip id of ADDED trip is available
         final TripDescriptor tripDescriptor = tripUpdate.getTrip();
         if (!tripDescriptor.hasTripId()) {
-            LOG.warn("No trip id found for ADDED trip, skipping.");
+            LOG.warn("[{}]  No trip id found for ADDED trip, skipping.", routerId);
             return false;
         }
 
@@ -372,20 +374,20 @@ public class TimetableSnapshotSource {
         if (trip != null) {
             // TODO: should we support this and add a new instantiation of this trip (making it
             // frequency based)?
-            LOG.warn("Graph already contains trip id of ADDED trip, skipping.");
+            LOG.warn("[{}] Graph already contains trip id of ADDED trip, skipping.", routerId);
             return false;
         }
 
         // Check whether a start date exists
         if (!tripDescriptor.hasStartDate()) {
             // TODO: should we support this and apply update to all days?
-            LOG.warn("ADDED trip doesn't have a start date in TripDescriptor, skipping.");
+            LOG.warn("[{}] ADDED trip doesn't have a start date in TripDescriptor, skipping.", routerId);
             return false;
         }
 
         // Check whether at least two stop updates exist
         if (tripUpdate.getStopTimeUpdateCount() < 2) {
-            LOG.warn("ADDED trip has less then two stops, skipping.");
+            LOG.warn("[{}] ADDED trip has less then two stops, skipping.", routerId);
             return false;
         }
 
@@ -428,13 +430,13 @@ public class TimetableSnapshotSource {
 
                 // Check non-negative
                 if (stopSequence < 0) {
-                    LOG.warn("Trip update contains negative stop sequence, skipping.");
+                    LOG.warn("[{}] Trip update contains negative stop sequence, skipping.", routerId);
                     return null;
                 }
 
                 // Check whether sequence is increasing
                 if (previousStopSequence != null && previousStopSequence > stopSequence) {
-                    LOG.warn("Trip update contains decreasing stop sequence, skipping.");
+                    LOG.warn("[{}] Trip update contains decreasing stop sequence, skipping.", routerId);
                     return null;
                 }
                 previousStopSequence = stopSequence;
@@ -453,12 +455,11 @@ public class TimetableSnapshotSource {
                     // Set a null value for a skipped stop
                     stops.add(null);
                 } else {
-                    LOG.warn("Graph doesn't contain stop id \"{}\" of trip update, skipping.",
-                            stopTimeUpdate.getStopId());
+                    LOG.warn("[{}] Graph doesn't contain stop id \"{}\" of trip update, skipping.", routerId, stopTimeUpdate.getStopId());
                     return null;
                 }
             } else {
-                LOG.warn("Trip update misses some stop ids, skipping.");
+                LOG.warn("[{}] Trip update misses some stop ids, skipping.", routerId);
                 return null;
             }
 
@@ -469,7 +470,7 @@ public class TimetableSnapshotSource {
                     // Check for increasing time
                     final Long time = stopTimeUpdate.getArrival().getTime();
                     if (previousTime != null && previousTime > time) {
-                        LOG.warn("Trip update contains decreasing times, skipping.");
+                        LOG.warn("[{}] Trip update contains decreasing times, skipping.", routerId);
                         return null;
                     }
                     previousTime = time;
@@ -481,7 +482,7 @@ public class TimetableSnapshotSource {
                         // Determine whether earlier stop is skipped
                         final boolean earlierSkippedStop = isStopSkipped(earlierStopTimeUpdate);
                         if (!earlierSkippedStop) {
-                            LOG.warn("Trip update misses arrival time, skipping.");
+                            LOG.warn("[{}] Trip update misses arrival time, skipping.", routerId);
                             return null;
                         }
                     }
@@ -492,7 +493,7 @@ public class TimetableSnapshotSource {
                     // Check for increasing time
                     final Long time = stopTimeUpdate.getDeparture().getTime();
                     if (previousTime != null && previousTime > time) {
-                        LOG.warn("Trip update contains decreasing times, skipping.");
+                        LOG.warn("[{}] Trip update contains decreasing times, skipping.", routerId);
                         return null;
                     }
                     previousTime = time;
@@ -504,7 +505,7 @@ public class TimetableSnapshotSource {
                         // Determine whether later stop is skipped
                         final boolean laterSkippedStop = isStopSkipped(laterStopTimeUpdate);
                         if (!laterSkippedStop) {
-                            LOG.warn("Trip update misses departure time, skipping.");
+                            LOG.warn("[{}] Trip update misses departure time, skipping.", routerId);
                             return null;
                         }
                     }
@@ -585,7 +586,7 @@ public class TimetableSnapshotSource {
         final Set<FeedScopedId> serviceIds = graph.getCalendarService().getServiceIdsOnDate(serviceDate);
         if (serviceIds.isEmpty()) {
             // No service id exists: return error for now
-            LOG.warn("ADDED trip has service date for which no service id is available, skipping.");
+            LOG.warn("[{}] ADDED trip has service date for which no service id is available, skipping.", routerId);
             return false;
         } else {
             // Just use first service id of set
@@ -639,8 +640,8 @@ public class TimetableSnapshotSource {
                 if (stopTimeUpdate.hasArrival() && stopTimeUpdate.getArrival().hasTime()) {
                     final long arrivalTime = stopTimeUpdate.getArrival().getTime() - midnightSecondsSinceEpoch;
                     if (arrivalTime < 0 || arrivalTime > MAX_ARRIVAL_DEPARTURE_TIME) {
-                        LOG.warn("ADDED trip has invalid arrival time (compared to start date in "
-                                + "TripDescriptor), skipping.");
+                        LOG.warn("[{}] ADDED trip has invalid arrival time (compared to start date in "
+                                + "TripDescriptor), skipping.", routerId);
                         return false;
                     }
                     stopTime.setArrivalTime((int) arrivalTime);
@@ -649,8 +650,8 @@ public class TimetableSnapshotSource {
                 if (stopTimeUpdate.hasDeparture() && stopTimeUpdate.getDeparture().hasTime()) {
                     final long departureTime = stopTimeUpdate.getDeparture().getTime() - midnightSecondsSinceEpoch;
                     if (departureTime < 0 || departureTime > MAX_ARRIVAL_DEPARTURE_TIME) {
-                        LOG.warn("ADDED trip has invalid departure time (compared to start date in "
-                                + "TripDescriptor), skipping.");
+                        LOG.warn("[{}] ADDED trip has invalid departure time (compared to start date in "
+                                + "TripDescriptor), skipping.", routerId);
                         return false;
                     }
                     stopTime.setDepartureTime((int) departureTime);
@@ -733,7 +734,7 @@ public class TimetableSnapshotSource {
             final Timetable timetable = pattern.scheduledTimetable;
             final int tripIndex = timetable.getTripIndex(tripId);
             if (tripIndex == -1) {
-                LOG.warn("Could not cancel scheduled trip {}", tripId);
+                LOG.warn("[{}] Could not cancel scheduled trip {}", routerId, tripId);
             } else {
                 final TripTimes newTripTimes = new TripTimes(timetable.getTripTimes(tripIndex));
                 newTripTimes.cancel();
@@ -763,7 +764,7 @@ public class TimetableSnapshotSource {
             final Timetable timetable = buffer.resolve(pattern, serviceDate);
             final int tripIndex = timetable.getTripIndex(tripId);
             if (tripIndex == -1) {
-                LOG.warn("Could not cancel previously added trip {}", tripId);
+                LOG.warn("[{}] Could not cancel previously added trip {}", routerId, tripId);
             } else {
                 final TripTimes newTripTimes = new TripTimes(timetable.getTripTimes(tripIndex));
                 newTripTimes.cancel();
@@ -777,7 +778,7 @@ public class TimetableSnapshotSource {
 
     private boolean handleUnscheduledTrip(final TripUpdate tripUpdate, final String feedId, final ServiceDate serviceDate) {
         // TODO: Handle unscheduled trip
-        LOG.warn("Unscheduled trips are currently unsupported. Skipping TripUpdate.");
+        LOG.warn("[{}] Unscheduled trips are currently unsupported. Skipping TripUpdate.", routerId);
         return false;
     }
 
@@ -803,7 +804,7 @@ public class TimetableSnapshotSource {
         // Check whether trip id of MODIFIED trip is available
         final TripDescriptor tripDescriptor = tripUpdate.getTrip();
         if (!tripDescriptor.hasTripId()) {
-            LOG.warn("No trip id found for MODIFIED trip, skipping.");
+            LOG.warn("[{}] No trip id found for MODIFIED trip, skipping.", routerId);
             return false;
         }
 
@@ -812,28 +813,28 @@ public class TimetableSnapshotSource {
         Trip trip = getTripForTripId(feedId, tripId);
         if (trip == null) {
             // TODO: should we support this and consider it an ADDED trip?
-            LOG.warn("Graph does not contain trip id of MODIFIED trip, skipping.");
+            LOG.warn("[{}] Graph does not contain trip id of MODIFIED trip, skipping.", routerId);
             return false;
         }
 
         // Check whether a start date exists
         if (!tripDescriptor.hasStartDate()) {
             // TODO: should we support this and apply update to all days?
-            LOG.warn("MODIFIED trip doesn't have a start date in TripDescriptor, skipping.");
+            LOG.warn("[{}] MODIFIED trip doesn't have a start date in TripDescriptor, skipping.", routerId);
             return false;
         } else {
             // Check whether service date is served by trip
             final Set<FeedScopedId> serviceIds = graph.getCalendarService().getServiceIdsOnDate(serviceDate);
             if (!serviceIds.contains(trip.getServiceId())) {
                 // TODO: should we support this and change service id of trip?
-                LOG.warn("MODIFIED trip has a service date that is not served by trip, skipping.");
+                LOG.warn("[{}] MODIFIED trip has a service date that is not served by trip, skipping.", routerId);
                 return false;
             }
         }
 
         // Check whether at least two stop updates exist
         if (tripUpdate.getStopTimeUpdateCount() < 2) {
-            LOG.warn("MODIFIED trip has less then two stops, skipping.");
+            LOG.warn("[{}] MODIFIED trip has less then two stops, skipping.", routerId);
             return false;
         }
 
@@ -898,10 +899,10 @@ public class TimetableSnapshotSource {
             if (cancelScheduledSuccess || cancelPreviouslyAddedSuccess) {
                 success = true;
             } else {
-                LOG.warn("No pattern found for tripId {}, skipping TripUpdate.", tripId);
+                LOG.warn("[{}] No pattern found for tripId {}, skipping TripUpdate.", routerId, tripId);
             }
         } else {
-            LOG.warn("No trip id in CANCELED trip update, skipping TripUpdate.");
+            LOG.warn("[{}] No trip id in CANCELED trip update, skipping TripUpdate.", routerId);
         }
 
         return success;
@@ -915,7 +916,7 @@ public class TimetableSnapshotSource {
             return false;
         }
 
-        LOG.debug("purging expired realtime data");
+        LOG.debug("[{}] purging expired realtime data", routerId);
 
         lastPurgeDate = previously;
 
