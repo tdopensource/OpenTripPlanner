@@ -899,7 +899,7 @@ public class PatternHopFactory {
 
     private void loadFeedInfo(Graph graph) {
         for (FeedInfo info : transitService.getAllFeedInfos()) {
-            graph.addFeedInfo(info);
+            graph.addFeedInfo(feedId.getId(), info);
         }
     }
 
