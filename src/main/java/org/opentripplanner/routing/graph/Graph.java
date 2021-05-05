@@ -893,8 +893,8 @@ public class Graph implements Serializable {
         this.feedIds.add(feedId);
     }
 
-    public void addFeedInfo(FeedInfo info) {
-        this.feedInfoForId.put(info.getId().toString(), info);
+    public void addFeedInfo(String feedId, FeedInfo info) {
+        this.feedInfoForId.put(feedId, info);
     }
 
     public void addFlexArea(String feedId, String areaId, Polygon flexArea) {
