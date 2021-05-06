@@ -80,7 +80,13 @@ public final class FeedInfo extends IdentityBean<String> {
     }
 
     public String toString() {
-        return "<FeedInfo " + getId() + ">";
+        return new StringBuffer()
+                .append("<FeedInfo id: ")
+                .append(getId())
+                .append(", publisherName: ")
+                .append(getPublisherName())
+                .append(">")
+                .toString();
     }
 
 }

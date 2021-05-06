@@ -1,8 +1,12 @@
 package org.opentripplanner.graph_builder.module;
 
 import com.csvreader.CsvReader;
+import org.apache.commons.lang3.StringUtils;
 import org.onebusaway.csv_entities.CsvInputSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +15,9 @@ import java.nio.charset.StandardCharsets;
  * Represent a feed id in a GTFS feed.
  */
 public class GtfsFeedId {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GtfsFeedId.class);
+
     /**
      * A counter that will increase for each created feed id.
      */
@@ -77,6 +84,17 @@ public class GtfsFeedId {
             return this;
         }
 
+        public Builder fromFileNameIfEmpty(File path) {
+            if (id == null || id.trim().length() == 0) {
+                final String feedIdBasedOnFile = StringUtils.defaultString(path.getName())
+                        .replaceFirst("[.][^.]+$", "")
+                        .toLowerCase();
+                this.id = cleanId(feedIdBasedOnFile);
+                LOG.info("Generating feed_id based on filename: {}", id);
+            }
+            return this;
+        }
+
         /**
          * Cleans the id before it is set. This method ensures that the id is a valid id.
          *
@@ -106,5 +124,10 @@ public class GtfsFeedId {
             FEED_ID_COUNTER++;
             return new GtfsFeedId(id);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "<GtfsFeedId id: " + id + ">";
     }
 }

@@ -18,7 +18,7 @@ public class GtfsImport {
     public GtfsImport(File path) throws IOException {
         GtfsReader reader = new GtfsReader();
         reader.setInputLocation(path);
-        readFeedId(reader);
+        readFeedId(reader, path);
         readDao(reader);
     }
 
@@ -40,8 +40,11 @@ public class GtfsImport {
         reader.run();
     }
 
-    private void readFeedId(GtfsReader reader) {
-        feedId = new GtfsFeedId.Builder().fromGtfsFeed(reader.getInputSource()).build();
+    private void readFeedId(GtfsReader reader, File path) {
+        feedId = new GtfsFeedId.Builder()
+                .fromGtfsFeed(reader.getInputSource())
+                .fromFileNameIfEmpty(path)
+                .build();
     }
 
 }
