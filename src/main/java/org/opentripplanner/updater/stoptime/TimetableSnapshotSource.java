@@ -154,6 +154,10 @@ public class TimetableSnapshotSource {
         return snapshot;
     }
 
+    public void applyTripUpdates(final Graph graph, final boolean fullDataset, final List<TripUpdate> updates, final String feedIdPrimary) {
+        applyTripUpdates(graph, fullDataset, updates, feedIdPrimary, "noSecondaryFeed");
+    }
+
     /**
      * Method to apply a trip update list to the most recent version of the timetable snapshot. A
      * GTFS-RT feed is always applied against a single static feed (indicated by feedId).
@@ -169,17 +173,19 @@ public class TimetableSnapshotSource {
      * @param fullDataset true iff the list with updates represent all updates that are active right
      *        now, i.e. all previous updates should be disregarded
      * @param updates GTFS-RT TripUpdate's that should be applied atomically
-     * @param feedId
      */
-    public void applyTripUpdates(final Graph graph, final boolean fullDataset, final List<TripUpdate> updates, final String feedId) {
+    public void applyTripUpdates(final Graph graph, final boolean fullDataset, final List<TripUpdate> updates, final String feedIdPrimary, final String feedIdSecondary) {
         if (updates == null) {
             LOG.warn("[{}] updates is null", routerId);
             return;
         }
+        final String feedId = graph.getFeedIds().contains(feedIdPrimary) ? feedIdPrimary : feedIdSecondary;
+        LOG.info("[{}] Start updating trips for feedId: {}", routerId, feedId);
 
         // Acquire lock on buffer
         bufferLock.lock();
 
+        int updatedTrips = 0;
         try {
             if (fullDataset) {
                 // Remove all updates from the buffer
@@ -243,6 +249,7 @@ public class TimetableSnapshotSource {
 
                 if (applied) {
                     appliedBlockCount++;
+                    updatedTrips++;
                 } else {
                     LOG.warn("[{}] Failed to apply TripUpdate.", routerId);
                     LOG.trace(" Contents: {}", tripUpdate);
@@ -252,6 +259,7 @@ public class TimetableSnapshotSource {
                     LOG.info("[{}] Applied {} trip updates.", routerId, appliedBlockCount);
                 }
             }
+            LOG.info("[{}] Applied {} trip updates for feedId: {}", routerId, updatedTrips, feedId);
             LOG.debug("[{}] end of update message", routerId);
 
             // Make a snapshot after each message in anticipation of incoming requests
@@ -317,7 +325,7 @@ public class TimetableSnapshotSource {
         final TripPattern pattern = getPatternForTripId(feedId, tripId);
 
         if (pattern == null) {
-            LOG.warn("[{}] No pattern found for tripId {}, skipping TripUpdate.", routerId, tripId);
+            LOG.warn("[{}] No pattern found for tripId {} and feedId {}, skipping TripUpdate.", routerId, tripId, feedId);
             return false;
         }
 

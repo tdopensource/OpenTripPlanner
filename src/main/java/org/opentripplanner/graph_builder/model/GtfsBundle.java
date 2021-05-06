@@ -122,7 +122,10 @@ public class GtfsBundle {
     public GtfsFeedId getFeedId() {
         if (feedId == null) {
             try {
-                feedId = new GtfsFeedId.Builder().fromGtfsFeed(getCsvInputSource()).build();
+                feedId = new GtfsFeedId.Builder()
+                        .fromGtfsFeed(getCsvInputSource())
+                        .fromFileNameIfEmpty(path)
+                        .build();
             } catch (IOException e) {
                 LOG.error("Failed to fetch feedId from feed_info.");
                 throw new RuntimeException(e);

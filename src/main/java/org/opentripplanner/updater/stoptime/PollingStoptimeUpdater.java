@@ -1,7 +1,6 @@
 package org.opentripplanner.updater.stoptime;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.opentripplanner.updater.*;
@@ -59,6 +58,11 @@ public class PollingStoptimeUpdater extends PollingGraphUpdater {
     private String feedId;
 
     /**
+     * Alternative feed name when we don't find original feedId (useful when you have GTFS with dynamic names)
+     */
+    private String feedIdSecondary;
+
+    /**
      * Set only if we should attempt to match the trip_id from other data in TripDescriptor
      */
     private GtfsRealtimeFuzzyTripMatcher fuzzyTripMatcher;
@@ -72,6 +76,7 @@ public class PollingStoptimeUpdater extends PollingGraphUpdater {
     public void configurePolling(Graph graph, JsonNode config) throws Exception {
         // Create update streamer from preferences
         feedId = config.path("feedId").asText("");
+        feedIdSecondary = config.path("feedIdSecondary").asText("");
         String sourceType = config.path("sourceType").asText();
         if (sourceType != null) {
             if (sourceType.equals("gtfs-http")) {
@@ -142,7 +147,7 @@ public class PollingStoptimeUpdater extends PollingGraphUpdater {
         if (updates != null) {
             // Handle trip updates via graph writer runnable
             TripUpdateGraphWriterRunnable runnable =
-                    new TripUpdateGraphWriterRunnable(fullDataset, updates, feedId);
+                    new TripUpdateGraphWriterRunnable(fullDataset, updates, feedId, feedIdSecondary);
             updaterManager.execute(runnable);
         }
     }

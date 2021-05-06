@@ -26,8 +26,13 @@ public class TripUpdateGraphWriterRunnable implements GraphWriterRunnable {
     private final List<TripUpdate> updates;
 
     private final String feedId;
+    private final String feedIdSecondary;
 
     public TripUpdateGraphWriterRunnable(final boolean fullDataset, final List<TripUpdate> updates, final String feedId) {
+        this(fullDataset, updates, feedId, "noSecondaryFeedId");
+    }
+
+    public TripUpdateGraphWriterRunnable(final boolean fullDataset, final List<TripUpdate> updates, final String feedId, final String feedIdSecondary) {
         // Preconditions
         Preconditions.checkNotNull(updates);
         Preconditions.checkNotNull(feedId);
@@ -36,6 +41,7 @@ public class TripUpdateGraphWriterRunnable implements GraphWriterRunnable {
         this.fullDataset = fullDataset;
         this.updates = updates;
         this.feedId = feedId;
+        this.feedIdSecondary = feedIdSecondary;
     }
 
     @Override
@@ -43,7 +49,7 @@ public class TripUpdateGraphWriterRunnable implements GraphWriterRunnable {
         // Apply updates to graph using realtime snapshot source
         TimetableSnapshotSource snapshotSource = graph.timetableSnapshotSource;
         if (snapshotSource != null) {
-            snapshotSource.applyTripUpdates(graph, fullDataset, updates, feedId);
+            snapshotSource.applyTripUpdates(graph, fullDataset, updates, feedId, feedIdSecondary);
         } else {
             LOG.error("Could not find realtime data snapshot source in graph."
                     + " The following updates are not applied: {}", updates);
