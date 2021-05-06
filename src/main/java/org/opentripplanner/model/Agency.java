@@ -99,6 +99,6 @@ public final class Agency extends IdentityBean<String> {
     }
 
     public String toString() {
-        return "<Agency " + this.id + ">";
+        return "<Agency id: " + this.id + ", name: " + name + ">";
     }
 }
