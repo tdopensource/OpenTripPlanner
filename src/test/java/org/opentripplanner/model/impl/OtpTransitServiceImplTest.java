@@ -122,8 +122,11 @@ public class OtpTransitServiceImplTest {
     public void testGetAllFeedInfos() {
         Collection<FeedInfo> feedInfos = subject.getAllFeedInfos();
 
+        final FeedInfo expectedResult = new FeedInfo();
+        expectedResult.setId("1");
+
         assertEquals(1, feedInfos.size());
-        assertEquals("<FeedInfo 1>", first(feedInfos).toString());
+        assertEquals(expectedResult, first(feedInfos));
     }
 
     @Test
