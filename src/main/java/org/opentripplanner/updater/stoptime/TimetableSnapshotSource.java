@@ -260,6 +260,11 @@ public class TimetableSnapshotSource {
                 }
             }
             LOG.info("[{}] Applied {} trip updates for feedId: {}", routerId, updatedTrips, feedId);
+            if (updatedTrips == 0) {
+                LOG.info("[{}] There are no updated trips, so below we print some debug details", routerId);
+                LOG.info("[{}] trip ids in graph (first 50): {}", routerId, graphIndex.tripForId.keySet().stream().limit(50));
+                LOG.info("[{}] trip patterns in graph (first 50): {}", routerId, graphIndex.patternForTrip.keySet().stream().limit(50));
+            }
             LOG.debug("[{}] end of update message", routerId);
 
             // Make a snapshot after each message in anticipation of incoming requests
