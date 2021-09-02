@@ -235,6 +235,12 @@ public abstract class RoutingResource {
      */
     @QueryParam("whiteListedAgencies")
     protected String whiteListedAgencies;
+
+    /**
+     * Comma separated list of feed ids.
+     */
+    @QueryParam("whiteListedFeedIds")
+    protected String whiteListedFeedIds;
     
     /** The comma-separated list of banned trips.  The format is agency_trip[:stop*], so:
      * TriMet_24601 or TriMet_24601:0:1:2:17:18:19
@@ -548,6 +554,9 @@ public abstract class RoutingResource {
 
         if (whiteListedAgencies != null)
             request.setWhiteListedAgencies(whiteListedAgencies);
+
+        if (whiteListedFeedIds != null)
+            request.setWhiteListedFeedIds(whiteListedFeedIds);
 
         HashMap<FeedScopedId, BannedStopSet> bannedTripMap = makeBannedTripMap(bannedTrips);
       
