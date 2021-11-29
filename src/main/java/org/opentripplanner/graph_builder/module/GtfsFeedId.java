@@ -87,8 +87,7 @@ public class GtfsFeedId {
         public Builder fromFileNameIfEmpty(File path) {
             if (id == null || id.trim().length() == 0) {
                 final String feedIdBasedOnFile = StringUtils.defaultString(path.getName())
-                        .replaceFirst("[.][^.]+$", "")
-                        .toLowerCase();
+                        .replaceFirst("[.][^.]+$", "");
                 this.id = cleanId(feedIdBasedOnFile);
                 LOG.info("Generating feed_id based on filename: {}", id);
             }
