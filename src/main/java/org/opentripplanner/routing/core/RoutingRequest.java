@@ -256,6 +256,9 @@ public class RoutingRequest implements Cloneable, Serializable {
     /** Only use certain named agencies */
     public HashSet<String> whiteListedAgencies = new HashSet<String>();
 
+
+    public HashSet<String> whiteListedFeedIds = new HashSet<String>();
+
     /** Do not use certain trips */
     public HashMap<FeedScopedId, BannedStopSet> bannedTrips = new HashMap<FeedScopedId, BannedStopSet>();
 
@@ -871,6 +874,13 @@ public class RoutingRequest implements Cloneable, Serializable {
         }
     }
 
+    public void setWhiteListedFeedIds(String s) {
+        if (!s.isEmpty()) {
+            whiteListedFeedIds = new HashSet<>();
+            Collections.addAll(whiteListedFeedIds, s.split(","));
+        }
+    }
+
     public final static int MIN_SIMILARITY = 1000;
 
     public void setFromString(String from) {
@@ -1013,6 +1023,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             clone.bannedStops = bannedStops.clone();
             clone.bannedStopsHard = bannedStopsHard.clone();
             clone.whiteListedAgencies = (HashSet<String>) whiteListedAgencies.clone();
+            clone.whiteListedFeedIds = (HashSet<String>) whiteListedFeedIds.clone();
             clone.whiteListedRoutes = whiteListedRoutes.clone();
             clone.preferredAgencies = (HashSet<String>) preferredAgencies.clone();
             clone.preferredRoutes = preferredRoutes.clone();
@@ -1387,6 +1398,14 @@ public class RoutingRequest implements Cloneable, Serializable {
         if (whiteListedAgencies != null && whiteListedAgencies.size() > 0) {
             whiteListInUse = true;
             if (whiteListedAgencies.contains(route.getAgency().getId())) {
+                whiteListed = true;
+            }
+        }
+
+        /* check if agency is whitelisted for this plan */
+        if (whiteListedFeedIds != null && whiteListedFeedIds.size() > 0) {
+            whiteListInUse = true;
+            if (whiteListedFeedIds.contains(route.getId().getAgencyId())) {
                 whiteListed = true;
             }
         }
